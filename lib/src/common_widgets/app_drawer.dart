@@ -101,7 +101,7 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                     icon: Icons.inventory_2_outlined,
                     title: 'Inventory',
                     isExpanded: _isExpanded,
-                    isSelected: currentRoute == '/inventory',
+                    isSelected: currentRoute.startsWith('/inventory'),
                     onTap: () => context.go('/inventory'),
                   ),
                   _DrawerItem(

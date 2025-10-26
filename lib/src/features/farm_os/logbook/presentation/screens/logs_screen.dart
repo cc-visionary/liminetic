@@ -4,9 +4,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:liminetic/src/common_widgets/filter_chip_row.dart';
 import 'package:liminetic/src/common_widgets/responsive_scaffold.dart';
 import 'package:liminetic/src/features/farm_os/logbook/domain/log_entry_model.dart';
 import 'package:liminetic/src/features/farm_os/logbook/presentation/controllers/logbook_controller.dart';
+
+// Mapping for Logs
+const Map<LogType?, String> logFilterMap = {
+  null: 'All', // null means no filter
+  LogType.visitorEntry: 'Visitors',
+  LogType.event: 'Events',
+  LogType.deliveryReceived: 'Deliveries',
+};
 
 /// The main screen for viewing the farm's logbook with search and filtering.
 class LogsScreen extends ConsumerStatefulWidget {
@@ -58,7 +67,8 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
   Widget build(BuildContext context) {
     final logsAsyncValue = ref.watch(rawLogbookStreamProvider);
     final filteredLogs = ref.watch(filteredLogbookProvider);
-    final currentFilter = ref.watch(logbookFilterProvider).type;
+    final currentFilterType = ref.watch(logbookFilterProvider).type;
+    final currentFilterLabel = logFilterMap[currentFilterType] ?? 'All';
 
     return ResponsiveScaffold(
       title: 'Logs',
@@ -86,27 +96,17 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
                   onFieldSubmitted: (_) => _performSearch(),
                 ),
               ),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    _buildChip(ref, 'All', null, currentFilter),
-                    _buildChip(
-                      ref,
-                      'Visitors',
-                      LogType.visitorEntry,
-                      currentFilter,
-                    ),
-                    _buildChip(ref, 'Events', LogType.event, currentFilter),
-                    _buildChip(
-                      ref,
-                      'Deliveries',
-                      LogType.deliveryReceived,
-                      currentFilter,
-                    ),
-                  ],
-                ),
+              FilterChipRow(
+                options: logFilterMap.values.toList(),
+                selectedValue: currentFilterLabel,
+                onSelected: (label) {
+                  final newFilterType = logFilterMap.entries
+                      .firstWhere((e) => e.value == label)
+                      .key;
+                  ref
+                      .read(logbookFilterProvider.notifier)
+                      .setFilterType(newFilterType);
+                },
               ),
               Expanded(
                 child: logsAsyncValue.when(

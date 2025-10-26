@@ -4,9 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:liminetic/src/common_widgets/filter_chip_row.dart';
 import 'package:liminetic/src/common_widgets/responsive_scaffold.dart';
 import 'package:liminetic/src/features/farm_os/tasks/domain/task_model.dart';
 import 'package:liminetic/src/features/farm_os/tasks/presentation/controllers/tasks_controller.dart';
+
+// Mapping between enum and display string for the filter widget
+const Map<TaskFilter, String> taskFilterMap = {
+  TaskFilter.allTasks: 'All Tasks',
+  TaskFilter.myTasks: 'My Tasks',
+  TaskFilter.open: 'Open',
+  TaskFilter.overdue: 'Overdue',
+};
 
 /// The main screen for viewing and managing farm tasks.
 class TasksScreen extends ConsumerWidget {
@@ -17,6 +26,7 @@ class TasksScreen extends ConsumerWidget {
     // Watch the raw stream for loading/error states and the derived provider for the data.
     final tasksAsyncValue = ref.watch(rawTasksStreamProvider);
     final filteredTasks = ref.watch(filteredTasksProvider);
+    final currentFilter = ref.watch(tasksFilterProvider);
 
     return ResponsiveScaffold(
       title: 'Tasks',
@@ -26,7 +36,17 @@ class TasksScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          _FilterChips(),
+          FilterChipRow(
+            options: taskFilterMap.values.toList(), // Use display names
+            selectedValue: taskFilterMap[currentFilter]!,
+            onSelected: (label) {
+              // Convert the display name back to the enum value before updating state.
+              final newFilter = taskFilterMap.entries
+                  .firstWhere((e) => e.value == label)
+                  .key;
+              ref.read(tasksFilterProvider.notifier).setFilter(newFilter);
+            },
+          ),
           Expanded(
             child: tasksAsyncValue.when(
               data: (_) {
@@ -49,67 +69,6 @@ class TasksScreen extends ConsumerWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// A widget to display the filter chips.
-class _FilterChips extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final currentFilter = ref.watch(tasksFilterProvider);
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          _buildChip(
-            context,
-            ref,
-            'My Tasks',
-            TaskFilter.myTasks,
-            currentFilter,
-          ),
-          _buildChip(
-            context,
-            ref,
-            'All Tasks',
-            TaskFilter.allTasks,
-            currentFilter,
-          ),
-          _buildChip(context, ref, 'Open', TaskFilter.open, currentFilter),
-          _buildChip(
-            context,
-            ref,
-            'Overdue',
-            TaskFilter.overdue,
-            currentFilter,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChip(
-    BuildContext context,
-    WidgetRef ref,
-    String label,
-    TaskFilter filter,
-    TaskFilter currentFilter,
-  ) {
-    final isSelected = filter == currentFilter;
-    return Padding(
-      padding: const EdgeInsets.only(right: 8.0),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: isSelected,
-        onSelected: (selected) {
-          if (selected) {
-            ref.read(tasksFilterProvider.notifier).setFilter(filter);
-          }
-        },
       ),
     );
   }

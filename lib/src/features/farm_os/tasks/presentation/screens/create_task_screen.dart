@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:liminetic/src/features/auth/presentation/session_provider.dart';
 import 'package:liminetic/src/features/farm_os/locations/domain/location_model.dart';
 import 'package:liminetic/src/features/farm_os/settings/team/domain/farm_member_model.dart';
 import 'package:liminetic/src/features/farm_os/tasks/presentation/controllers/create_task_controller.dart';

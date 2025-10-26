@@ -20,6 +20,7 @@ enum LogType {
   visitorEntry,
   deliveryReceived,
   inventoryRestock,
+  inventoryUsage,
   sale,
   // General
   generalObservation;
@@ -83,6 +84,8 @@ class LogEntry {
         return 'Visitor Arrival: ${payload['visitorName'] ?? 'N/A'}';
       case LogType.deliveryReceived:
         return 'Delivery from ${payload['supplierName'] ?? 'N/A'}';
+      case LogType.inventoryUsage:
+        return '${payload['quantityUsed']} of ${payload['itemName']} used';
       case LogType.healthStatus:
         return 'Health Observation Logged';
       // Add more cases for other log types...
@@ -106,6 +109,8 @@ class LogEntry {
         return Icons.local_shipping_outlined;
       case LogType.healthStatus:
         return Icons.monitor_heart_outlined;
+      case LogType.inventoryUsage:
+        return Icons.remove_circle_outline;
       case LogType.movement:
         return Icons.sync_alt;
       // Add more cases...

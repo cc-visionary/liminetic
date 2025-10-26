@@ -10,14 +10,14 @@ import 'package:liminetic/src/features/farm_os/tasks/domain/task_model.dart';
 part 'tasks_controller.g.dart';
 
 /// An enum to represent the available filters on the Tasks screen.
-enum TaskFilter { myTasks, allTasks, open, overdue }
+enum TaskFilter { allTasks, myTasks, open, overdue }
 
 /// A simple provider to hold the currently selected filter state.
 /// The UI will update this provider when the user taps a filter chip.
 @riverpod
 class TasksFilter extends _$TasksFilter {
   @override
-  TaskFilter build() => TaskFilter.myTasks; // Default filter
+  TaskFilter build() => TaskFilter.allTasks; // Default filter
 
   void setFilter(TaskFilter filter) {
     state = filter;

@@ -91,6 +91,13 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                     onTap: () => context.go('/tasks'),
                   ),
                   _DrawerItem(
+                    icon: Icons.book_outlined,
+                    title: 'Logbook',
+                    isExpanded: _isExpanded,
+                    isSelected: currentRoute.startsWith('/logs'),
+                    onTap: () => context.go('/logs'),
+                  ),
+                  _DrawerItem(
                     icon: Icons.inventory_2_outlined,
                     title: 'Inventory',
                     isExpanded: _isExpanded,

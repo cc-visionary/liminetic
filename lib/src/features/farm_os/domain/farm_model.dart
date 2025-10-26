@@ -7,12 +7,14 @@ class Farm {
   final String farmName;
   final String ownerId;
   final List<String> memberIds; // List of user UIDs
+  final List<String> activeModules;
 
   Farm({
     required this.id,
     required this.farmName,
     required this.ownerId,
     required this.memberIds,
+    this.activeModules = const ['Swine'],
   });
 
   factory Farm.fromFirestore(DocumentSnapshot doc) {
@@ -22,14 +24,11 @@ class Farm {
       farmName: data['farmName'] ?? '',
       ownerId: data['ownerId'] ?? '',
       memberIds: List<String>.from(data['memberIds'] ?? []),
+      activeModules: List<String>.from(data['activeModules'] ?? ['Swine']),
     );
   }
 
   Map<String, dynamic> toMap() {
-    return {
-      'farmName': farmName,
-      'ownerId': ownerId,
-      'memberIds': memberIds,
-    };
+    return {'farmName': farmName, 'ownerId': ownerId, 'memberIds': memberIds};
   }
 }

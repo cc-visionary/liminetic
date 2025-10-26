@@ -23,7 +23,7 @@ class AppDrawer extends ConsumerStatefulWidget {
 class _AppDrawerState extends ConsumerState<AppDrawer> {
   /// A state variable to control the expanded or collapsed view of the drawer
   /// in desktop mode. Defaults to `false` (expanded).
-  bool _isExpanded = false;
+  bool _isExpanded = true;
 
   @override
   Widget build(BuildContext context) {
@@ -62,10 +62,26 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                     isExpanded: _isExpanded,
                   ),
                   const Divider(height: 1),
-                  _FarmSwitcher(),
+                  _FarmSwitcher(isExpanded: _isExpanded),
                   _DrawerSectionTitle(
                     title: 'FARM OS',
                     isExpanded: _isExpanded,
+                  ),
+                  _DrawerItem(
+                    icon: Icons.dashboard_outlined,
+                    title: 'Dashboard',
+                    isExpanded: _isExpanded,
+                    isSelected: currentRoute == '/home',
+                    onTap: () => context.go('/home'),
+                  ),
+                  _DrawerItem(
+                    icon: Icons.location_pin,
+                    title: 'Locations',
+                    isExpanded: _isExpanded,
+                    isSelected: currentRoute.startsWith(
+                      '/locations',
+                    ), // Selects for parent and child routes
+                    onTap: () => context.go('/locations'),
                   ),
                   _DrawerItem(
                     icon: Icons.check_circle_outline,
@@ -146,14 +162,13 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
   }
 }
 
-/// A widget that displays the current farm and allows the user to switch
-/// between their farms or create a new one.
+/// A widget that displays the current farm and allows switching between farms.
 class _FarmSwitcher extends ConsumerWidget {
-  const _FarmSwitcher();
+  final bool isExpanded;
+  const _FarmSwitcher({required this.isExpanded});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch the session to get the list of all farms and the active one.
     final session = ref.watch(sessionProvider).value;
     final currentFarm = session?.activeFarm;
     final allFarms = session?.allFarms ?? [];
@@ -167,58 +182,70 @@ class _FarmSwitcher extends ConsumerWidget {
       }
     });
 
-    return PopupMenuButton<String>(
-      // The `onSelected` callback handles both switching and adding farms.
-      onSelected: (value) {
-        if (value == 'add_new_farm') {
-          // Use a Future to ensure the menu closes before navigating.
-          Future.microtask(() => context.go('/add-farm'));
-        } else {
-          // A farm ID was selected, so call the controller to switch.
-          ref.read(sessionControllerProvider.notifier).switchActiveFarm(value);
-        }
-      },
-      // Build the list of menu items from the user's farms.
-      itemBuilder: (context) => [
-        ...allFarms.map(
-          (farm) => PopupMenuItem(
-            value: farm.id,
-            child: Text(
-              farm.farmName,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
+    // If not expanded in desktop view, show nothing.
+    if (!isExpanded) {
+      return const SizedBox.shrink();
+    }
+
+    // If the user has only one farm (or none), just display the name statically.
+    if (allFarms.length <= 1) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: theme.scaffoldBackgroundColor,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
           ),
-        ),
-        const PopupMenuDivider(),
-        PopupMenuItem(
-          value: 'add_new_farm',
-          child: const Row(
+          child: Row(
             children: [
-              Icon(Icons.add, size: 20),
-              SizedBox(width: 8),
-              Text('Create New Farm'),
+              Expanded(
+                child: Text(
+                  currentFarm?.farmName ?? 'No Farm',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
         ),
-      ],
-      // This is the widget that the user taps to open the menu.
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        child: Row(
-          children: [
-            const Icon(Icons.home_work_outlined),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                currentFarm?.farmName ?? 'Select Farm',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+      );
+    }
+
+    // If the user has multiple farms, show the dropdown switcher.
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: theme.dividerColor),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: currentFarm?.id,
+            isExpanded: true,
+            icon: const Icon(Icons.unfold_more),
+            onChanged: (String? newFarmId) {
+              if (newFarmId != null && newFarmId != currentFarm?.id) {
+                ref
+                    .read(sessionControllerProvider.notifier)
+                    .switchActiveFarm(newFarmId);
+              }
+            },
+            items: allFarms.map((farm) {
+              return DropdownMenuItem<String>(
+                value: farm.id,
+                child: Text(
+                  farm.farmName,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const Icon(Icons.swap_vert),
-          ],
+              );
+            }).toList(),
+          ),
         ),
       ),
     );

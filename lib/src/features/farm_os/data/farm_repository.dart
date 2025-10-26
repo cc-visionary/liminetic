@@ -85,6 +85,16 @@ class FarmRepository {
       'farmName': farmName,
     });
   }
+
+  Future<void> updateActiveModules({
+    required String farmId,
+    required List<String> activeModules,
+  }) async {
+    await _firestore
+        .collection('farms')
+        .doc(farmId)
+        .update({'activeModules': activeModules});
+  }
 }
 
 // Provider for FarmRepository

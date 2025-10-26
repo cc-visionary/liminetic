@@ -10,20 +10,25 @@ import 'package:liminetic/src/features/auth/presentation/session_provider.dart';
 import 'package:liminetic/src/core/presentation/screens/splash_screen.dart';
 import 'package:liminetic/src/features/auth/presentation/screens/login_screen.dart';
 import 'package:liminetic/src/features/auth/presentation/screens/signup_screen.dart';
-import 'package:liminetic/src/features/farm_os/farm_management/presentation/screens/farm_details_screen.dart';
+import 'package:liminetic/src/features/farm_os/settings/farm_management/presentation/screens/farm_details_screen.dart';
 import 'package:liminetic/src/features/farm_os/locations/domain/location_model.dart';
 import 'package:liminetic/src/features/farm_os/locations/presentation/screens/add_location_screen.dart';
 import 'package:liminetic/src/features/farm_os/locations/presentation/screens/location_details_screen.dart';
 import 'package:liminetic/src/features/farm_os/locations/presentation/screens/locations_screen.dart';
 import 'package:liminetic/src/features/farm_os/presentation/screens/add_farm_screen.dart'; // Import the new screen
-import 'package:liminetic/src/features/farm_os/appearance/presentation/screens/appearance_screen.dart';
-import 'package:liminetic/src/features/farm_os/farm_management/presentation/screens/farm_management_screen.dart';
-import 'package:liminetic/src/features/farm_os/modules/presentation/screens/modules_screen.dart';
-import 'package:liminetic/src/features/farm_os/notifications/presentation/screens/notifications_screen.dart';
+import 'package:liminetic/src/features/farm_os/settings/appearance/presentation/screens/appearance_screen.dart';
+import 'package:liminetic/src/features/farm_os/settings/farm_management/presentation/screens/farm_management_screen.dart';
+import 'package:liminetic/src/features/farm_os/settings/modules/presentation/screens/modules_screen.dart';
+import 'package:liminetic/src/features/farm_os/settings/notifications/presentation/screens/notifications_screen.dart';
 import 'package:liminetic/src/features/farm_os/presentation/screens/home_screen.dart';
 import 'package:liminetic/src/features/farm_os/settings/presentation/screens/settings_screen.dart';
 import 'package:liminetic/src/features/auth/presentation/screens/edit_profile_screen.dart';
-import 'package:liminetic/src/features/farm_os/team/presentation/screens/my_team_screen.dart';
+import 'package:liminetic/src/features/farm_os/settings/team/presentation/screens/my_team_screen.dart';
+import 'package:liminetic/src/features/farm_os/tasks/domain/task_model.dart';
+import 'package:liminetic/src/features/farm_os/tasks/presentation/screens/create_task_screen.dart';
+import 'package:liminetic/src/features/farm_os/tasks/presentation/screens/edit_task_screen.dart';
+import 'package:liminetic/src/features/farm_os/tasks/presentation/screens/task_details_screen.dart';
+import 'package:liminetic/src/features/farm_os/tasks/presentation/screens/tasks_screen.dart';
 
 /// A reusable function to create a page with a custom fade transition.
 /// This ensures all screen transitions in the app are smooth and consistent.
@@ -145,6 +150,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         ),
         routes: [
           GoRoute(
+            path: '/add-location',
+            pageBuilder: (context, state) => buildPageWithFadeTransition(
+              context: context,
+              state: state,
+              child: const AddLocationScreen(),
+            ),
+          ),
+          GoRoute(
             path: ':locationId', // e.g., /locations/xyz123
             pageBuilder: (context, state) {
               // Get the Location object passed during navigation
@@ -159,12 +172,48 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(
-        path: '/add-location',
+        path: '/tasks',
         pageBuilder: (context, state) => buildPageWithFadeTransition(
           context: context,
           state: state,
-          child: const AddLocationScreen(),
+          child: const TasksScreen(),
         ),
+        routes: [
+          // Add a new top-level route for creating tasks
+          GoRoute(
+            path: '/create-task',
+            pageBuilder: (context, state) => buildPageWithFadeTransition(
+              context: context,
+              state: state,
+              child: const CreateTaskScreen(),
+            ),
+          ),
+          GoRoute(
+            path: ':taskId', // e.g., /tasks/xyz123
+            pageBuilder: (context, state) {
+              // Pass the whole Task object during navigation for efficiency
+              final task = state.extra as Task;
+              return buildPageWithFadeTransition(
+                context: context,
+                state: state,
+                child: TaskDetailsScreen(task: task),
+              );
+            },
+            routes: [
+              GoRoute(
+                path: 'edit', // e.g., /tasks/xyz123/edit
+                pageBuilder: (context, state) {
+                  final task = state.extra as Task;
+                  return buildPageWithFadeTransition(
+                    context: context,
+                    state: state,
+                    child: EditTaskScreen(task: task),
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
       ),
       GoRoute(
         path: '/inventory',

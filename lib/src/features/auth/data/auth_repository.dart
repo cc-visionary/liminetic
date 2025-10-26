@@ -4,7 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:liminetic/src/features/farm_os/team/domain/farm_member_model.dart';
+import 'package:liminetic/src/features/farm_os/settings/team/domain/farm_member_model.dart';
 import '../domain/user_model.dart';
 
 /// A repository for handling all authentication and user management tasks.
@@ -57,10 +57,7 @@ class AuthRepository {
 
     await _firestore.runTransaction((transaction) async {
       // Create the Farm document.
-      transaction.set(farmDocRef, {
-        'farmName': farmName,
-        'ownerId': user.uid,
-      });
+      transaction.set(farmDocRef, {'farmName': farmName, 'ownerId': user.uid});
 
       // Create the AppUser document.
       final newUser = AppUser(
@@ -71,6 +68,19 @@ class AuthRepository {
         activeFarmId: farmDocRef.id, // Set it as the currently active farm
       );
       transaction.set(userDocRef, newUser.toMap());
+
+      // Create a FarmMember document for the owner in the members subcollection.
+      final ownerMember = FarmMember(
+        uid: user.uid,
+        username: username,
+        email: email,
+        role: 'Owner',
+        permissions: {'isOwner': true}, // Example of a root permission
+      );
+      transaction.set(
+        farmDocRef.collection('members').doc(user.uid),
+        ownerMember.toMap(),
+      );
     });
 
     return userCredential;
@@ -89,13 +99,15 @@ class AuthRepository {
     final farmDocRef = _firestore.collection('farms').doc();
     final userDocRef = _firestore.collection('users').doc(ownerId);
 
+    // Fetch the owner's user data to get their details.
+    final userSnap = await userDocRef.get();
+    if (!userSnap.exists) throw Exception("Owner user document not found.");
+    final ownerData = AppUser.fromFirestore(userSnap);
+
     // Use a transaction to ensure both writes succeed or fail together.
     await _firestore.runTransaction((transaction) async {
       // Create the new farm document.
-      transaction.set(farmDocRef, {
-        'farmName': farmName,
-        'ownerId': ownerId,
-      });
+      transaction.set(farmDocRef, {'farmName': farmName, 'ownerId': ownerId});
 
       // Update the user's document.
       transaction.update(userDocRef, {
@@ -103,6 +115,19 @@ class AuthRepository {
         'activeFarmId': farmDocRef.id,
       });
     });
+
+    final ownerMember = FarmMember(
+      uid: ownerId,
+      username: ownerData.username,
+      email: ownerData.email,
+      role: 'Owner',
+      permissions: {'isOwner': true},
+    );
+
+    await farmDocRef
+        .collection('members')
+        .doc(ownerId)
+        .set(ownerMember.toMap());
   }
 
   /// Creates a sub-user account with a username and password (no real email).
@@ -127,8 +152,12 @@ class AuthRepository {
     final proxyEmail = '$username@$farmId.liminetic.local';
 
     // Use a temporary app instance to create the user without signing out the admin.
-    final tempAppName = 'temp_user_creation_${DateTime.now().millisecondsSinceEpoch}';
-    final tempApp = await Firebase.initializeApp(name: tempAppName, options: Firebase.app().options);
+    final tempAppName =
+        'temp_user_creation_${DateTime.now().millisecondsSinceEpoch}';
+    final tempApp = await Firebase.initializeApp(
+      name: tempAppName,
+      options: Firebase.app().options,
+    );
     final tempAuth = FirebaseAuth.instanceFor(app: tempApp);
 
     try {
@@ -145,7 +174,10 @@ class AuthRepository {
         activeFarmId: farmId,
         farmIds: [farmId], // The sub-user belongs to this farm.
       );
-      await _firestore.collection('users').doc(newUserUid).set(newAppUser.toMap());
+      await _firestore
+          .collection('users')
+          .doc(newUserUid)
+          .set(newAppUser.toMap());
 
       // Create the FarmMember document in the farm's subcollection.
       final newFarmMember = FarmMember(
@@ -182,14 +214,21 @@ class AuthRepository {
             .get();
 
         if (userQuery.docs.isEmpty) {
-          throw Exception('User not found. Please check the username and try again.');
+          throw Exception(
+            'User not found. Please check the username and try again.',
+          );
         }
         // This will find both real emails and our generated proxy emails.
         final userData = userQuery.docs.first.data();
-        email = userData['email'] ?? '$loginIdentifier@${userData['activeFarmId']}.liminetic.local';
+        email =
+            userData['email'] ??
+            '$loginIdentifier@${userData['activeFarmId']}.liminetic.local';
       }
 
-      return await _auth.signInWithEmailAndPassword(email: email, password: password);
+      return await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
     } on FirebaseAuthException {
       rethrow;
     } catch (e) {
@@ -216,14 +255,13 @@ class AuthRepository {
     required String uid,
     required String username,
   }) async {
-    await _firestore.collection('users').doc(uid).update({'username': username});
+    await _firestore.collection('users').doc(uid).update({
+      'username': username,
+    });
   }
 }
 
 /// The Riverpod provider for the AuthRepository.
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepository(
-    FirebaseAuth.instance,
-    FirebaseFirestore.instance,
-  );
+  return AuthRepository(FirebaseAuth.instance, FirebaseFirestore.instance);
 });

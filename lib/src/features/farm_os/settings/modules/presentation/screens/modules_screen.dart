@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liminetic/src/features/auth/presentation/session_provider.dart';
-import 'package:liminetic/src/features/farm_os/modules/presentation/controllers/modules_controller.dart';
+import 'package:liminetic/src/features/farm_os/settings/modules/presentation/controllers/modules_controller.dart';
 
 /// A data class to represent a single module option in the UI.
 class ModuleOption {

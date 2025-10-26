@@ -87,10 +87,8 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                     icon: Icons.check_circle_outline,
                     title: 'Tasks',
                     isExpanded: _isExpanded,
-                    isSelected:
-                        currentRoute ==
-                        '/home', // Highlight if this is the current page
-                    onTap: () => context.go('/home'),
+                    isSelected: currentRoute.startsWith('/tasks'),
+                    onTap: () => context.go('/tasks'),
                   ),
                   _DrawerItem(
                     icon: Icons.inventory_2_outlined,

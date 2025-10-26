@@ -17,7 +17,10 @@ class AddLocationScreen extends ConsumerStatefulWidget {
 
 class _AddLocationScreenState extends ConsumerState<AddLocationScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  // Manage a list of controllers, initialized with one for the first field.
+  final List<TextEditingController> _nameControllers = [
+    TextEditingController(),
+  ];
 
   LocationTemplate? _selectedTemplate;
   Location? _selectedParent;
@@ -25,20 +28,72 @@ class _AddLocationScreenState extends ConsumerState<AddLocationScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    // Dispose all controllers in the list.
+    for (final controller in _nameControllers) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
-  void _saveLocation() {
-    if (_formKey.currentState?.validate() ?? false) {
-      ref
+  /// Adds a new, empty text field for another location.
+  void _addLocationField() {
+    setState(() {
+      _nameControllers.add(TextEditingController());
+    });
+  }
+
+  /// Removes a specific text field.
+  void _removeLocationField(int index) {
+    // Cannot remove the last field.
+    if (_nameControllers.length > 1) {
+      setState(() {
+        // Dispose the controller before removing it.
+        _nameControllers[index].dispose();
+        _nameControllers.removeAt(index);
+      });
+    }
+  }
+
+  /// Collects all names and calls the batch save method.
+  Future<void> _saveLocations() async {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
+    // Filter out any empty names before saving.
+    final names = _nameControllers
+        .map((controller) => controller.text.trim())
+        .where((name) => name.isNotEmpty)
+        .toList();
+
+    if (names.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter at least one location name.'),
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Call the new batch method in the controller.
+      await ref
           .read(locationsControllerProvider.notifier)
-          .addLocation(
-            name: _nameController.text.trim(),
+          .addBatchLocations(
+            names: names,
             type: _selectedTemplate!.name,
             level: _selectedTemplate!.level,
             parentLocationId: _selectedParent?.id,
           );
+
+      if (!mounted) return;
+      ref.invalidate(rawLocationsStreamProvider);
+      context.pop();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
@@ -79,6 +134,46 @@ class _AddLocationScreenState extends ConsumerState<AddLocationScreen> {
       appBar: AppBar(title: const Text('Add New Location')),
       body: formParamsAsync.when(
         data: (params) {
+          // Check if there are any available templates.
+          // This will be false if no modules are active.
+          if (params.allTemplates.isEmpty) {
+            // If no templates are available, show a helpful message instead of the form.
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.extension_off_outlined,
+                      size: 60,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'No Location Types Available',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'To add a location, you must first activate a module (e.g., Swine Management) in your farm settings.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () => context.go('/settings/modules'),
+                      child: const Text('Manage Modules'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
           final availableTemplates = params.allTemplates.where((template) {
             // Rule 1: Always allow creating top-level (Level 1) locations.
             if (template.level == 1) {
@@ -156,17 +251,6 @@ class _AddLocationScreenState extends ConsumerState<AddLocationScreen> {
                         value == null ? 'Please select a type' : null,
                   ),
                   const SizedBox(height: 24),
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Location Name',
-                      hintText: 'e.g., Pen #12',
-                    ),
-                    validator: (value) => (value?.trim().isEmpty ?? true)
-                        ? 'Please enter a name'
-                        : null,
-                  ),
-                  const SizedBox(height: 24),
                   // --- Parent Location Dropdown (conditionally shown) ---
                   if (_potentialParents.isNotEmpty)
                     DropdownButtonFormField<Location>(
@@ -189,21 +273,62 @@ class _AddLocationScreenState extends ConsumerState<AddLocationScreen> {
                           ? 'Please select a parent location'
                           : null,
                     ),
-                  if (_potentialParents.isNotEmpty) const SizedBox(height: 32),
-                  ElevatedButton(
-                    onPressed: locationsControllerState.isLoading
-                        ? null
-                        : _saveLocation,
-                    child: locationsControllerState.isLoading
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text('Save Location'),
+                  if (_potentialParents.isNotEmpty) const SizedBox(height: 24),
+
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _nameControllers.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 16),
+                    itemBuilder: (context, index) {
+                      return TextFormField(
+                        controller: _nameControllers[index],
+                        decoration: InputDecoration(
+                          labelText: 'Location Name #${index + 1}',
+                          // Add a remove button for all fields except the first one.
+                          suffixIcon: index > 0
+                              ? IconButton(
+                                  icon: const Icon(Icons.remove_circle_outline),
+                                  onPressed: () => _removeLocationField(index),
+                                )
+                              : null,
+                        ),
+                        validator: (value) {
+                          // Validation is optional for all but the first field.
+                          if (index == 0 && (value?.trim().isEmpty ?? true)) {
+                            return 'At least one location name is required';
+                          }
+                          return null;
+                        },
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: _addLocationField,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add Another Location'),
+                  ),
+
+                  const SizedBox(height: 32),
+                  Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: ElevatedButton(
+                      onPressed: locationsControllerState.isLoading
+                          ? null
+                          : _saveLocations,
+                      child: locationsControllerState.isLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('Save Location(s)'),
+                    ),
                   ),
                 ],
               ),

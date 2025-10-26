@@ -40,7 +40,6 @@ class _ModulesScreenState extends ConsumerState<ModulesScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_isInitialized) {
-      // Get the currently active modules from the session.
       final activeModules =
           ref.watch(sessionProvider).value?.activeFarm?.activeModules ?? [];
       _initializeOptions(activeModules);
@@ -84,6 +83,43 @@ class _ModulesScreenState extends ConsumerState<ModulesScreen> {
     ];
   }
 
+  /// **NEW**: This method shows the confirmation dialog.
+  Future<void> _showConfirmationDialog() async {
+    // Determine if the user is deactivating modules, which might have consequences.
+    final originalActiveCount =
+        ref.read(sessionProvider).value?.activeFarm?.activeModules.length ?? 0;
+    final newActiveCount = _moduleOptions.where((opt) => opt.isActive).length;
+
+    final isDeactivating = newActiveCount < originalActiveCount;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Changes'),
+        content: Text(
+          isDeactivating
+              ? 'Disabling modules may hide related data or features. Are you sure you want to continue?'
+              : 'Are you sure you want to save these module settings?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+
+    // If the user confirmed, proceed with saving.
+    if (confirmed == true) {
+      _saveChanges();
+    }
+  }
+
   /// Converts the local UI state back into a list of strings and saves it.
   void _saveChanges() {
     final newActiveModules = _moduleOptions
@@ -116,18 +152,7 @@ class _ModulesScreenState extends ConsumerState<ModulesScreen> {
     final controllerState = ref.watch(modulesControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Manage Modules'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: TextButton(
-              onPressed: controllerState.isLoading ? null : _saveChanges,
-              child: const Text('Save'),
-            ),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Manage Modules')),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
@@ -137,8 +162,11 @@ class _ModulesScreenState extends ConsumerState<ModulesScreen> {
               .map(
                 (option) => _ModuleTile(
                   option: option,
-                  onChanged: (newValue) =>
-                      setState(() => option.isActive = newValue),
+                  onChanged: (newValue) {
+                    setState(() => option.isActive = newValue);
+                    // Call the confirmation dialog immediately after the state changes.
+                    _showConfirmationDialog();
+                  },
                 ),
               ),
           const SizedBox(height: 24),

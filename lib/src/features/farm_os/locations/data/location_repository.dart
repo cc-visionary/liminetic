@@ -13,9 +13,9 @@ class LocationRepository {
 
   // A private map associating module names with their specific location types.
   static final Map<String, List<String>> _moduleTemplates = {
-    'Swine': ['Building', 'Pen', 'Crate', 'Stall'],
-    'Poultry': ['Coop', 'Nest Box'],
-    'Crops': ['Greenhouse', 'Field', 'Row', 'Bed'],
+    'Swine Management': ['Building', 'Pen', 'Crate', 'Stall'],
+    'Poultry Management': ['Coop', 'Nest Box'],
+    'Crops Management': ['Greenhouse', 'Field', 'Row', 'Bed'],
   };
 
   // A private, static list of all possible location templates in the app.
@@ -135,7 +135,55 @@ class LocationRepository {
         .add(location.toMap());
   }
 
-  // TODO: Add methods for updateLocation and deleteLocation later.
+  /// Adds a batch of new location documents in a single atomic operation.
+  Future<void> addBatchLocations(
+    String farmId,
+    List<Location> locations,
+  ) async {
+    // Get a reference to the 'locations' subcollection.
+    final locationsCollection = _firestore
+        .collection('farms')
+        .doc(farmId)
+        .collection('locations');
+    // Create a new write batch.
+    final batch = _firestore.batch();
+
+    // For each location in the list, create a new document and add it to the batch.
+    for (final location in locations) {
+      final docRef = locationsCollection.doc(); // Firestore generates a new ID.
+      batch.set(docRef, location.toMap());
+    }
+
+    // Commit the batch to write all locations to the database at once.
+    await batch.commit();
+  }
+
+  /// Updates a specific location document.
+  Future<void> updateLocation(
+    String farmId,
+    String locationId,
+    Map<String, dynamic> data,
+  ) async {
+    await _firestore
+        .collection('farms')
+        .doc(farmId)
+        .collection('locations')
+        .doc(locationId)
+        .update(data);
+  }
+
+  /// Deletes a specific location document.
+  /// Note: This does not automatically delete child locations.
+  /// TODO: delete all child locations
+  /// TODO: can't delete if has existing animals here
+  Future<void> deleteLocation(String farmId, String locationId) async {
+    await _firestore
+        .collection('farms')
+        .doc(farmId)
+        .collection('locations')
+        .doc(locationId)
+        .delete();
+  }
 }
 
 /// Riverpod provider for the LocationRepository.

@@ -97,6 +97,10 @@ class LocationsScreen extends ConsumerWidget {
                               ),
                             ),
                             title: Text(child.name),
+                            onTap: () => context.push(
+                              '/locations/${child.id}',
+                              extra: child,
+                            ),
                           );
                         }).toList(),
                       ),

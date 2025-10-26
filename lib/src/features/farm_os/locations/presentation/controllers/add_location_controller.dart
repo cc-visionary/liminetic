@@ -21,6 +21,7 @@ class LocationFormParams {
 @riverpod
 Future<LocationFormParams> addLocationFormParams(Ref ref) async {
   final locationRepo = ref.watch(locationRepositoryProvider);
+  
   // Get the active modules from the current farm session.
   final activeModules = ref.watch(sessionProvider).value?.activeFarm?.activeModules ?? [];
   final allLocations = await ref.watch(rawLocationsStreamProvider.future);

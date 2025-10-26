@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:liminetic/src/common_widgets/app_drawer.dart';
 import 'package:liminetic/src/common_widgets/responsive_scaffold.dart';
 import 'package:liminetic/src/features/auth/presentation/session_provider.dart';
 
@@ -14,6 +13,10 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionProvider).value;
     final farmName = session?.activeFarm?.farmName ?? 'Liminetic Farms';
+
+    // Get the active modules from the current farm session.
+    final activeModules =
+        ref.watch(sessionProvider).value?.activeFarm?.activeModules ?? [];
 
     return ResponsiveScaffold(
       title: farmName,
@@ -46,41 +49,44 @@ class HomeScreen extends ConsumerWidget {
               ),
             ],
           ),
-          _ModuleCard(
-            title: 'Swine Module',
-            actions: [
-              _ModuleAction(
-                icon: Icons.add_circle_outline,
-                label: 'Add Pig',
-                onTap: () {},
-              ),
-              _ModuleAction(
-                icon: Icons.child_friendly_outlined,
-                label: 'Log Farrowing',
-                onTap: () {},
-              ),
-              _ModuleAction(
-                icon: Icons.health_and_safety_outlined,
-                label: 'Health Log',
-                onTap: () {},
-              ),
-              _ModuleAction(
-                icon: Icons.visibility_outlined,
-                label: 'View Sows',
-                onTap: () {},
-              ),
-              _ModuleAction(
-                icon: Icons.sync_outlined,
-                label: 'Breeding Cycles',
-                onTap: () {},
-              ),
-              _ModuleAction(
-                icon: Icons.move_up_outlined,
-                label: 'Move Pigs',
-                onTap: () {},
-              ),
-            ],
-          ),
+          // Conditionally render the Swine Module card.
+          // This `if` statement is clean, readable, and directly tied to our single source of truth.
+          if (activeModules.contains('Swine Management'))
+            _ModuleCard(
+              title: 'Swine Module',
+              actions: [
+                _ModuleAction(
+                  icon: Icons.add_circle_outline,
+                  label: 'Add Pig',
+                  onTap: () {},
+                ),
+                _ModuleAction(
+                  icon: Icons.child_friendly_outlined,
+                  label: 'Log Farrowing',
+                  onTap: () {},
+                ),
+                _ModuleAction(
+                  icon: Icons.health_and_safety_outlined,
+                  label: 'Health Log',
+                  onTap: () {},
+                ),
+                _ModuleAction(
+                  icon: Icons.visibility_outlined,
+                  label: 'View Sows',
+                  onTap: () {},
+                ),
+                _ModuleAction(
+                  icon: Icons.sync_outlined,
+                  label: 'Breeding Cycles',
+                  onTap: () {},
+                ),
+                _ModuleAction(
+                  icon: Icons.move_up_outlined,
+                  label: 'Move Pigs',
+                  onTap: () {},
+                ),
+              ],
+            ),
         ],
       ),
     );

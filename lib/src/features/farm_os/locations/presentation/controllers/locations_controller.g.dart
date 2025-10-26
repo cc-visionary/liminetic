@@ -140,7 +140,7 @@ final class LocationsControllerProvider
 }
 
 String _$locationsControllerHash() =>
-    r'10bfc298574126800ea7710f5cae44e3c33d3141';
+    r'53040ee78a3f8affe6357f4749201900681da86b';
 
 /// Controller for handling actions related to locations, like adding a new one.
 

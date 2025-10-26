@@ -2,7 +2,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:liminetic/src/features/farm_os/team/domain/farm_member_model.dart';
+import 'package:liminetic/src/features/farm_os/settings/team/domain/farm_member_model.dart';
 import '../domain/farm_model.dart';
 
 class FarmRepository {

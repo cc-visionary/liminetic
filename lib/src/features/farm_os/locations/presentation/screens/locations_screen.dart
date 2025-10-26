@@ -20,7 +20,7 @@ class LocationsScreen extends ConsumerWidget {
     return ResponsiveScaffold(
       title: 'Locations',
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/add-location'),
+        onPressed: () => context.push('/locations/add-location'),
         child: const Icon(Icons.add),
       ),
       body: Column(

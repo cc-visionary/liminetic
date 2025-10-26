@@ -5,7 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:liminetic/src/features/auth/data/auth_repository.dart';
 import 'package:liminetic/src/features/auth/presentation/session_provider.dart';
 import 'package:liminetic/src/features/farm_os/data/farm_repository.dart';
-import 'package:liminetic/src/features/farm_os/team/domain/farm_member_model.dart';
+import 'package:liminetic/src/features/farm_os/settings/team/domain/farm_member_model.dart';
 
 part 'team_controller.g.dart';
 

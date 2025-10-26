@@ -10,6 +10,11 @@ import 'package:liminetic/src/features/auth/presentation/session_provider.dart';
 import 'package:liminetic/src/core/presentation/screens/splash_screen.dart';
 import 'package:liminetic/src/features/auth/presentation/screens/login_screen.dart';
 import 'package:liminetic/src/features/auth/presentation/screens/signup_screen.dart';
+import 'package:liminetic/src/features/farm_os/logbook/domain/log_entry_model.dart';
+import 'package:liminetic/src/features/farm_os/logbook/presentation/screens/edit_log_screen.dart';
+import 'package:liminetic/src/features/farm_os/logbook/presentation/screens/log_details_screen.dart';
+import 'package:liminetic/src/features/farm_os/logbook/presentation/screens/logs_screen.dart';
+import 'package:liminetic/src/features/farm_os/logbook/presentation/screens/add_log_entry_screen.dart';
 import 'package:liminetic/src/features/farm_os/settings/farm_management/presentation/screens/farm_details_screen.dart';
 import 'package:liminetic/src/features/farm_os/locations/domain/location_model.dart';
 import 'package:liminetic/src/features/farm_os/locations/presentation/screens/add_location_screen.dart';
@@ -208,6 +213,52 @@ final goRouterProvider = Provider<GoRouter>((ref) {
                     context: context,
                     state: state,
                     child: EditTaskScreen(task: task),
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/logs',
+        pageBuilder: (context, state) => buildPageWithFadeTransition(
+          context: context,
+          state: state,
+          child: const LogsScreen(),
+        ),
+        routes: [
+          GoRoute(
+            path: '/add-log',
+            pageBuilder: (context, state) {
+              // Check if a pre-selected type was passed as an extra argument
+              final preselectedType = state.extra as LogType?;
+              return buildPageWithFadeTransition(
+                context: context,
+                state: state,
+                child: AddLogEntryScreen(preselectedType: preselectedType),
+              );
+            },
+          ),
+          GoRoute(
+            path: ':logId', // e.g., /logs/xyz123
+            pageBuilder: (context, state) {
+              final log = state.extra as LogEntry;
+              return buildPageWithFadeTransition(
+                context: context,
+                state: state,
+                child: LogDetailsScreen(log: log),
+              );
+            },
+            routes: [
+              GoRoute(
+                path: 'edit', // e.g., /log/xyz123/edit
+                pageBuilder: (context, state) {
+                  final log = state.extra as LogEntry;
+                  return buildPageWithFadeTransition(
+                    context: context,
+                    state: state,
+                    child: EditLogScreen(log: log),
                   );
                 },
               ),

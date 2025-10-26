@@ -110,10 +110,6 @@ class _FilterChips extends ConsumerWidget {
             ref.read(tasksFilterProvider.notifier).setFilter(filter);
           }
         },
-        selectedColor: Theme.of(context).colorScheme.primary,
-        labelStyle: TextStyle(
-          color: isSelected ? Theme.of(context).colorScheme.onPrimary : null,
-        ),
       ),
     );
   }

@@ -11,6 +11,10 @@ import 'package:liminetic/src/core/presentation/screens/splash_screen.dart';
 import 'package:liminetic/src/features/auth/presentation/screens/login_screen.dart';
 import 'package:liminetic/src/features/auth/presentation/screens/signup_screen.dart';
 import 'package:liminetic/src/features/farm_os/farm_management/presentation/screens/farm_details_screen.dart';
+import 'package:liminetic/src/features/farm_os/locations/domain/location_model.dart';
+import 'package:liminetic/src/features/farm_os/locations/presentation/screens/add_location_screen.dart';
+import 'package:liminetic/src/features/farm_os/locations/presentation/screens/location_details_screen.dart';
+import 'package:liminetic/src/features/farm_os/locations/presentation/screens/locations_screen.dart';
 import 'package:liminetic/src/features/farm_os/presentation/screens/add_farm_screen.dart'; // Import the new screen
 import 'package:liminetic/src/features/farm_os/appearance/presentation/screens/appearance_screen.dart';
 import 'package:liminetic/src/features/farm_os/farm_management/presentation/screens/farm_management_screen.dart';
@@ -130,6 +134,36 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           context: context,
           state: state,
           child: const HomeScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/locations',
+        pageBuilder: (context, state) => buildPageWithFadeTransition(
+          context: context,
+          state: state,
+          child: const LocationsScreen(),
+        ),
+        routes: [
+          GoRoute(
+            path: ':locationId', // e.g., /locations/xyz123
+            pageBuilder: (context, state) {
+              // Get the Location object passed during navigation
+              final location = state.extra as Location;
+              return buildPageWithFadeTransition(
+                context: context,
+                state: state,
+                child: LocationDetailsScreen(location: location),
+              );
+            },
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/add-location',
+        pageBuilder: (context, state) => buildPageWithFadeTransition(
+          context: context,
+          state: state,
+          child: const AddLocationScreen(),
         ),
       ),
       GoRoute(

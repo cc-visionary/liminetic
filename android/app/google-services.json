@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "201600144729",
+    "project_id": "liminetic",
+    "storage_bucket": "liminetic.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:201600144729:android:cdab0a47b53d40a4c8a848",
+        "android_client_info": {
+          "package_name": "com.example.liminetic"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCgJufIxFLs4GQeweOEDRMvsDkyn7s68JA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

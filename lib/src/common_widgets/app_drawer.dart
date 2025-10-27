@@ -389,7 +389,7 @@ class _DrawerItem extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     // Dynamically set colors based on selection status and theme mode for a perfect match.
-    final Color? backgroundColor = isSelected
+    final Color backgroundColor = isSelected
         ? (colorScheme.brightness == Brightness.light
               ? const Color(0xFFE6F5EC)
               : colorScheme.primary.withOpacity(0.2))

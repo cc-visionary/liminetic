@@ -161,7 +161,7 @@ final class FilteredTasksProvider
   }
 }
 
-String _$filteredTasksHash() => r'63c39bb3ef879b2009edafc0ff580037505510a4';
+String _$filteredTasksHash() => r'7af5859018b2ac399e99b89c8843aa19f3051eec';
 
 /// A controller for handling actions related to tasks.
 

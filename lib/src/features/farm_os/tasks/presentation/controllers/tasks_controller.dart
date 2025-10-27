@@ -61,7 +61,6 @@ List<Task> filteredTasks(Ref ref) {
                 task.dueDate!.isBefore(now) &&
                 task.status != TaskStatus.completed;
           }).toList();
-        case TaskFilter.allTasks:
         default:
           return tasks;
       }

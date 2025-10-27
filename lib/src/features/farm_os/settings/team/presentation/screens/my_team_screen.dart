@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:liminetic/src/common_widgets/responsive_scaffold.dart';
 import 'package:liminetic/src/features/farm_os/settings/team/presentation/controllers/team_controller.dart';
 
 /// A screen for displaying and managing the members of a farm team.

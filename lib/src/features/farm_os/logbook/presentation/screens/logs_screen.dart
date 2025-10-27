@@ -35,7 +35,7 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
     _searchController.addListener(_onSearchChanged);
   }
 
-  _onSearchChanged() {
+  void _onSearchChanged() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       if (mounted) {
@@ -147,24 +147,6 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
               ),
             ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildChip(
-    WidgetRef ref,
-    String label,
-    LogType? filterType,
-    LogType? currentFilter,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8.0),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: currentFilter == filterType,
-        onSelected: (_) {
-          ref.read(logbookFilterProvider.notifier).setFilterType(filterType);
-        },
       ),
     );
   }

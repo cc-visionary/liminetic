@@ -149,8 +149,6 @@ class _ModulesScreenState extends ConsumerState<ModulesScreen> {
       }
     });
 
-    final controllerState = ref.watch(modulesControllerProvider);
-
     return Scaffold(
       appBar: AppBar(title: const Text('Manage Modules')),
       body: ListView(
@@ -222,7 +220,7 @@ class _ModuleTile extends StatelessWidget {
         child: SwitchListTile(
           value: option.isActive,
           onChanged: onChanged,
-          activeColor: Theme.of(context).colorScheme.primary,
+          activeThumbColor: Theme.of(context).colorScheme.primary,
           secondary: CircleAvatar(
             backgroundColor: option.isAvailable
                 ? Theme.of(context).colorScheme.primary.withOpacity(0.1)

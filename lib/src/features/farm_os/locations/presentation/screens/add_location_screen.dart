@@ -3,9 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:liminetic/src/common_widgets/general_form_params_provider.dart';
 import 'package:liminetic/src/features/farm_os/locations/domain/location_model.dart';
 import 'package:liminetic/src/features/farm_os/locations/domain/location_template_model.dart';
-import 'package:liminetic/src/features/farm_os/locations/presentation/controllers/add_location_controller.dart';
 import 'package:liminetic/src/features/farm_os/locations/presentation/controllers/locations_controller.dart';
 
 class AddLocationScreen extends ConsumerStatefulWidget {
@@ -99,7 +99,7 @@ class _AddLocationScreenState extends ConsumerState<AddLocationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final formParamsAsync = ref.watch(addLocationFormParamsProvider);
+    final formParamsAsync = ref.watch(generalFormParamsProvider);
     final locationsControllerState = ref.watch(locationsControllerProvider);
 
     // Listen for the specific state transition from loading to success.
@@ -134,70 +134,20 @@ class _AddLocationScreenState extends ConsumerState<AddLocationScreen> {
       appBar: AppBar(title: const Text('Add New Location')),
       body: formParamsAsync.when(
         data: (params) {
-          // Check if there are any available templates.
-          // This will be false if no modules are active.
-          if (params.allTemplates.isEmpty) {
-            // If no templates are available, show a helpful message instead of the form.
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.extension_off_outlined,
-                      size: 60,
-                      color: Colors.grey,
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'No Location Types Available',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'To add a location, you must first activate a module (e.g., Swine Management) in your farm settings.',
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () => context.go('/settings/modules'),
-                      child: const Text('Manage Modules'),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          final availableTemplates = params.allTemplates.where((template) {
-            // Rule 1: Always allow creating top-level (Level 1) locations.
-            if (template.level == 1) {
-              return true;
-            }
-
-            // Rule 2: For higher levels, only allow creation if a valid parent already exists on the farm.
-            // First, find all the *types* of locations that can be a parent to this template.
-            final validParentTypes = params.allTemplates
-                .where(
-                  (parentTemplate) =>
-                      parentTemplate.possibleChildren.contains(template.name),
-                )
-                .map((pt) => pt.name)
-                .toSet(); // Use a Set for efficient lookup.
-
-            // Then, check if any of the *existing* farm locations match one of those parent types.
-            final aValidParentExistsOnFarm = params.allLocations.any(
-              (existingLocation) =>
-                  validParentTypes.contains(existingLocation.type),
-            );
-
-            return aValidParentExistsOnFarm;
-          }).toList();
+          final availableTemplates = params.locations.isEmpty
+              ? params.templates.where((t) => t.level == 1).toList()
+              : params.templates.where((template) {
+                  if (template.level == 1) return true;
+                  final validParentTypes = params.templates
+                      .where(
+                        (pt) => pt.possibleChildren.contains(template.name),
+                      )
+                      .map((pt) => pt.name)
+                      .toSet();
+                  return params.locations.any(
+                    (loc) => validParentTypes.contains(loc.type),
+                  );
+                }).toList();
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
@@ -229,17 +179,16 @@ class _AddLocationScreenState extends ConsumerState<AddLocationScreen> {
                         // This is the core logic for the dynamic parent dropdown.
                         if (template != null && template.level > 1) {
                           // 1. Find all TEMPLATE types that are valid parents for the selected child type.
-                          final validParentTypes = params.allTemplates
+                          final validParentTypes = params.templates
                               .where(
-                                (parentTemplate) => parentTemplate
-                                    .possibleChildren
-                                    .contains(template.name),
+                                (pt) =>
+                                    pt.possibleChildren.contains(template.name),
                               )
                               .map((pt) => pt.name)
                               .toList();
 
                           // 2. Filter the list of EXISTING locations to find actual potential parents.
-                          _potentialParents = params.allLocations
+                          _potentialParents = params.locations
                               .where(
                                 (loc) => validParentTypes.contains(loc.type),
                               )

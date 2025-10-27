@@ -56,7 +56,7 @@ CustomTransitionPage<void> buildPageWithFadeTransition<T>({
 }
 
 class FinancialsScreen extends StatelessWidget {
-  const FinancialsScreen({Key? key}) : super(key: key);
+  const FinancialsScreen({super.key});
   @override
   Widget build(BuildContext context) => const ResponsiveScaffold(
     title: 'Financials',

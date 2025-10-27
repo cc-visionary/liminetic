@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:liminetic/src/common_widgets/detail_row.dart';
+import 'package:liminetic/src/core/utils/string_extensions.dart';
 import 'package:liminetic/src/features/farm_os/logbook/domain/log_entry_model.dart';
 import 'package:liminetic/src/features/farm_os/logbook/presentation/controllers/logbook_controller.dart';
 import 'package:liminetic/src/features/farm_os/logbook/presentation/controllers/log_details_controller.dart';
@@ -87,7 +89,7 @@ class LogDetailsScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             Chip(label: Text(_getLogTypeDisplayName(log.type))),
             const SizedBox(height: 24),
-            _DetailRow(
+            DetailRow(
               icon: Icons.person_outline,
               title: 'Logged By',
               content: assigneeNameAsync.when(
@@ -96,7 +98,7 @@ class LogDetailsScreen extends ConsumerWidget {
                 error: (_, __) => 'Error',
               ),
             ),
-            _DetailRow(
+            DetailRow(
               icon: Icons.calendar_today_outlined,
               title: 'Date',
               content: DateFormat.yMMMd().format(log.timestamp.toDate()),
@@ -124,19 +126,19 @@ class LogDetailsScreen extends ConsumerWidget {
         final timeOutValue = log.payload['timeOut'] as Timestamp?;
 
         return [
-          _DetailRow(
+          DetailRow(
             icon: Icons.info_outline,
             title: 'Purpose of Visit',
             content: log.payload['purposeOfVisit'] ?? 'N/A',
           ),
-          _DetailRow(
+          DetailRow(
             icon: Icons.login,
             title: 'Time In',
             content: timeInValue != null
                 ? DateFormat.jm().format(timeInValue.toDate())
                 : 'Not recorded',
           ),
-          _DetailRow(
+          DetailRow(
             icon: Icons.logout,
             title: 'Time Out',
             content: timeOutValue != null
@@ -144,17 +146,17 @@ class LogDetailsScreen extends ConsumerWidget {
                 : 'Not logged out',
           ),
           locationsAsync.when(
-            data: (names) => _DetailRow(
+            data: (names) => DetailRow(
               icon: Icons.location_on_outlined,
               title: 'Locations Visited',
               content: names,
             ),
-            loading: () => const _DetailRow(
+            loading: () => const DetailRow(
               icon: Icons.location_on_outlined,
               title: 'Locations Visited',
               content: 'Loading...',
             ),
-            error: (_, __) => const _DetailRow(
+            error: (_, __) => const DetailRow(
               icon: Icons.location_on_outlined,
               title: 'Locations Visited',
               content: 'Error',
@@ -163,12 +165,12 @@ class LogDetailsScreen extends ConsumerWidget {
         ];
       case LogType.deliveryReceived:
         return [
-          _DetailRow(
+          DetailRow(
             icon: Icons.business_outlined,
             title: 'Supplier Name',
             content: log.payload['supplierName'] ?? 'N/A',
           ),
-          _DetailRow(
+          DetailRow(
             icon: Icons.inventory_2_outlined,
             title: 'Items Received',
             content: log.payload['itemsReceived'] ?? 'N/A',
@@ -176,7 +178,7 @@ class LogDetailsScreen extends ConsumerWidget {
         ];
       case LogType.generalObservation:
         return [
-          _DetailRow(
+          DetailRow(
             icon: Icons.notes_outlined,
             title: 'Note',
             content: log.payload['notes'] ?? 'N/A',
@@ -190,46 +192,12 @@ class LogDetailsScreen extends ConsumerWidget {
 
   /// Helper to get a user-friendly name for each enum value.
   String _getLogTypeDisplayName(LogType type) {
-    // This can be reused from your add_log_entry_screen
+    // Example: "visitorEntry" becomes "Visitor Entry"
     return type.name
-        .replaceAllMapped(RegExp(r'[A-Z]'), (match) => ' ${match.group(0)}')
-        .trim();
-  }
-}
-
-/// A reusable widget for displaying a detail row with an icon, title, and content.
-class _DetailRow extends StatelessWidget {
-  const _DetailRow({
-    required this.icon,
-    required this.title,
-    required this.content,
-  });
-  final IconData icon;
-  final String title;
-  final String content;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: theme.colorScheme.primary, size: 20),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: theme.textTheme.labelLarge),
-                const SizedBox(height: 2),
-                Text(content, style: theme.textTheme.bodyLarge),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+        .replaceAllMapped(
+          RegExp(r'(?<=[a-z])[A-Z]'),
+          (match) => ' ${match.group(0)}',
+        )
+        .capitalize(); // This now uses the imported extension.
   }
 }

@@ -1,6 +1,5 @@
 // lib/src/features/auth/presentation/session_provider.dart
 
-import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liminetic/src/features/auth/data/auth_repository.dart';

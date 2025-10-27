@@ -22,7 +22,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _farmNameController = TextEditingController();
 
   bool _isPasswordObscured = true;
-  bool _isVerifyPasswordObscured = true;
 
   @override
   void dispose() {

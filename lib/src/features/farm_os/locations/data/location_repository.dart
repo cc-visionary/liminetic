@@ -2,14 +2,16 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:liminetic/src/features/auth/presentation/session_provider.dart';
 import 'package:liminetic/src/features/farm_os/locations/domain/location_model.dart';
 import 'package:liminetic/src/features/farm_os/locations/domain/location_template_model.dart';
 
 /// Repository for managing location data in Firestore.
 class LocationRepository {
   final FirebaseFirestore _firestore;
+  final Ref _ref; // The Riverpod Ref object for reading other providers.
 
-  LocationRepository(this._firestore);
+  LocationRepository(this._firestore, this._ref);
 
   // A private map associating module names with their specific location types.
   static final Map<String, List<String>> _moduleTemplates = {
@@ -92,22 +94,21 @@ class LocationRepository {
   ];
 
   /// Fetches location templates filtered by the farm's active modules.
-  ///
-  /// For example, if `activeModules` is `['Swine']`, this will only return
-  /// templates relevant to swine farming (Building, Pen, Crate, etc.).
-  List<LocationTemplate> getLocationTemplates({
-    required List<String> activeModules,
-  }) {
+  List<LocationTemplate> getLocationTemplates() {
+    // 1. Read the current session to get the active farm's modules.
+    final activeModules =
+        _ref.read(sessionProvider).value?.activeFarm?.activeModules ?? [];
+
     if (activeModules.isEmpty) {
-      return []; // Return nothing if no modules are active.
+      return [];
     }
 
-    // 1. Get a unique set of all template names allowed by the active modules.
+    // 2. Get a unique set of all template names allowed by the active modules.
     final allowedTemplateNames = activeModules
         .expand((module) => _moduleTemplates[module] ?? [])
         .toSet();
 
-    // 2. Filter the master list to return only the allowed templates.
+    // 3. Filter the master list to return only the allowed templates.
     return _allLocationTemplates
         .where((template) => allowedTemplateNames.contains(template.name))
         .toList();
@@ -188,5 +189,6 @@ class LocationRepository {
 
 /// Riverpod provider for the LocationRepository.
 final locationRepositoryProvider = Provider<LocationRepository>((ref) {
-  return LocationRepository(FirebaseFirestore.instance);
+  // Pass the Ref to the repository so it can read other providers.
+  return LocationRepository(FirebaseFirestore.instance, ref);
 });

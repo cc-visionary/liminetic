@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:liminetic/src/common_widgets/general_form_params_provider.dart';
 import 'package:liminetic/src/features/farm_os/locations/domain/location_model.dart';
 import 'package:liminetic/src/features/farm_os/tasks/domain/task_model.dart';
-import 'package:liminetic/src/features/farm_os/tasks/presentation/controllers/create_task_controller.dart';
 import 'package:liminetic/src/features/farm_os/tasks/presentation/controllers/tasks_controller.dart';
 import 'package:liminetic/src/features/farm_os/settings/team/domain/farm_member_model.dart';
 
@@ -23,7 +23,7 @@ class _EditTaskScreenState extends ConsumerState<EditTaskScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
-  
+
   FarmMember? _selectedAssignee;
   Location? _selectedLocation;
   DateTime? _selectedDueDate;
@@ -33,7 +33,9 @@ class _EditTaskScreenState extends ConsumerState<EditTaskScreen> {
     super.initState();
     // Pre-populate the form fields with the existing task data.
     _titleController = TextEditingController(text: widget.task.title);
-    _descriptionController = TextEditingController(text: widget.task.description);
+    _descriptionController = TextEditingController(
+      text: widget.task.description,
+    );
     _selectedDueDate = widget.task.dueDate;
 
     // Asynchronously fetch form data and then find the matching objects for the dropdowns.
@@ -42,7 +44,7 @@ class _EditTaskScreenState extends ConsumerState<EditTaskScreen> {
 
   /// Fetches dropdown data and sets the initial selected values.
   void _initializeDropdowns() {
-    ref.read(createTaskFormParamsProvider.future).then((params) {
+    ref.read(generalFormParamsProvider.future).then((params) {
       if (!mounted) return;
 
       // **THE FIX**: Use a try-catch block to safely find the matching items.
@@ -51,13 +53,17 @@ class _EditTaskScreenState extends ConsumerState<EditTaskScreen> {
       Location? initialLocation;
 
       try {
-        initialAssignee = params.teamMembers.firstWhere((m) => m.uid == widget.task.assigneeId);
+        initialAssignee = params.teamMembers.firstWhere(
+          (m) => m.uid == widget.task.assigneeId,
+        );
       } catch (e) {
         initialAssignee = null; // Not found, so leave it null
       }
 
       try {
-        initialLocation = params.locations.firstWhere((l) => l.id == widget.task.locationId);
+        initialLocation = params.locations.firstWhere(
+          (l) => l.id == widget.task.locationId,
+        );
       } catch (e) {
         initialLocation = null; // Not found, so leave it null
       }
@@ -96,7 +102,9 @@ class _EditTaskScreenState extends ConsumerState<EditTaskScreen> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     try {
-      await ref.read(tasksControllerProvider.notifier).editTask(
+      await ref
+          .read(tasksControllerProvider.notifier)
+          .editTask(
             taskId: widget.task.id,
             title: _titleController.text.trim(),
             description: _descriptionController.text.trim(),
@@ -107,13 +115,16 @@ class _EditTaskScreenState extends ConsumerState<EditTaskScreen> {
       // On success, go back to the main tasks list.
       if (mounted) context.go('/tasks');
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final formParamsAsync = ref.watch(createTaskFormParamsProvider);
+    final formParamsAsync = ref.watch(generalFormParamsProvider);
     final tasksState = ref.watch(tasksControllerProvider);
 
     return Scaffold(
@@ -129,26 +140,45 @@ class _EditTaskScreenState extends ConsumerState<EditTaskScreen> {
                 TextFormField(
                   controller: _titleController,
                   decoration: const InputDecoration(labelText: 'Task Title'),
-                  validator: (value) => (value?.trim().isEmpty ?? true) ? 'Please enter a title' : null,
+                  validator: (value) => (value?.trim().isEmpty ?? true)
+                      ? 'Please enter a title'
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _descriptionController,
-                  decoration: const InputDecoration(labelText: 'Description (optional)'),
+                  decoration: const InputDecoration(
+                    labelText: 'Description (optional)',
+                  ),
                   maxLines: 3,
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<FarmMember>(
                   value: _selectedAssignee,
                   decoration: const InputDecoration(labelText: 'Assign To'),
-                  items: params.teamMembers.map((member) => DropdownMenuItem(value: member, child: Text(member.username))).toList(),
-                  onChanged: (member) => setState(() => _selectedAssignee = member),
+                  items: params.teamMembers
+                      .map(
+                        (member) => DropdownMenuItem(
+                          value: member,
+                          child: Text(member.username),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (member) =>
+                      setState(() => _selectedAssignee = member),
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<Location>(
                   value: _selectedLocation,
-                  decoration: const InputDecoration(labelText: 'Link to Location'),
-                  items: params.locations.map((loc) => DropdownMenuItem(value: loc, child: Text(loc.name))).toList(),
+                  decoration: const InputDecoration(
+                    labelText: 'Link to Location',
+                  ),
+                  items: params.locations
+                      .map(
+                        (loc) =>
+                            DropdownMenuItem(value: loc, child: Text(loc.name)),
+                      )
+                      .toList(),
                   onChanged: (loc) => setState(() => _selectedLocation = loc),
                 ),
                 const SizedBox(height: 16),
@@ -156,7 +186,9 @@ class _EditTaskScreenState extends ConsumerState<EditTaskScreen> {
                   readOnly: true,
                   decoration: InputDecoration(
                     labelText: 'Due Date',
-                    hintText: _selectedDueDate == null ? 'mm/dd/yyyy' : DateFormat.yMMMd().format(_selectedDueDate!),
+                    hintText: _selectedDueDate == null
+                        ? 'mm/dd/yyyy'
+                        : DateFormat.yMMMd().format(_selectedDueDate!),
                     suffixIcon: const Icon(Icons.calendar_today),
                   ),
                   onTap: _selectDueDate,
@@ -164,7 +196,9 @@ class _EditTaskScreenState extends ConsumerState<EditTaskScreen> {
                 const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: tasksState.isLoading ? null : _saveChanges,
-                  child: tasksState.isLoading ? const CircularProgressIndicator() : const Text('Save Changes'),
+                  child: tasksState.isLoading
+                      ? const CircularProgressIndicator()
+                      : const Text('Save Changes'),
                 ),
               ],
             ),

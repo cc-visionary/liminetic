@@ -4,10 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:liminetic/src/features/auth/presentation/session_provider.dart';
+import 'package:liminetic/src/common_widgets/general_form_params_provider.dart';
 import 'package:liminetic/src/features/farm_os/locations/domain/location_model.dart';
 import 'package:liminetic/src/features/farm_os/settings/team/domain/farm_member_model.dart';
-import 'package:liminetic/src/features/farm_os/tasks/presentation/controllers/create_task_controller.dart';
 import 'package:liminetic/src/features/farm_os/tasks/presentation/controllers/tasks_controller.dart';
 
 /// A screen with a form to create a new task.
@@ -76,7 +75,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final formParamsAsync = ref.watch(createTaskFormParamsProvider);
+    final formParamsAsync = ref.watch(generalFormParamsProvider);
     final tasksState = ref.watch(tasksControllerProvider);
 
     return Scaffold(

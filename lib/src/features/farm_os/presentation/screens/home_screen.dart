@@ -45,7 +45,7 @@ class HomeScreen extends ConsumerWidget {
               _ModuleAction(
                 icon: Icons.book_outlined,
                 label: 'Logbook',
-                onTap: () {},
+                onTap: () => context.go('/logs'),
               ),
             ],
           ),

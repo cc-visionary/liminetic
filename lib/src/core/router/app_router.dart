@@ -10,6 +10,10 @@ import 'package:liminetic/src/features/auth/presentation/session_provider.dart';
 import 'package:liminetic/src/core/presentation/screens/splash_screen.dart';
 import 'package:liminetic/src/features/auth/presentation/screens/login_screen.dart';
 import 'package:liminetic/src/features/auth/presentation/screens/signup_screen.dart';
+import 'package:liminetic/src/features/farm_os/inventory/domain/inventory_item_model.dart';
+import 'package:liminetic/src/features/farm_os/inventory/presentation/screens/add_edit_inventory_item_screen.dart';
+import 'package:liminetic/src/features/farm_os/inventory/presentation/screens/inventory_item_details_screen.dart';
+import 'package:liminetic/src/features/farm_os/inventory/presentation/screens/inventory_list_screen.dart';
 import 'package:liminetic/src/features/farm_os/logbook/domain/log_entry_model.dart';
 import 'package:liminetic/src/features/farm_os/logbook/presentation/screens/edit_log_screen.dart';
 import 'package:liminetic/src/features/farm_os/logbook/presentation/screens/log_details_screen.dart';
@@ -51,18 +55,8 @@ CustomTransitionPage<void> buildPageWithFadeTransition<T>({
   );
 }
 
-// Placeholder Screens for drawer items
-class InventoryScreen extends StatelessWidget {
-  const InventoryScreen({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) => const ResponsiveScaffold(
-    title: 'Inventory',
-    body: Center(child: Text('Inventory Screen')),
-  );
-}
-
 class FinancialsScreen extends StatelessWidget {
-  const FinancialsScreen({Key? key}) : super(key: key);
+  const FinancialsScreen({super.key});
   @override
   Widget build(BuildContext context) => const ResponsiveScaffold(
     title: 'Financials',
@@ -271,8 +265,42 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => buildPageWithFadeTransition(
           context: context,
           state: state,
-          child: const InventoryScreen(),
+          child: const InventoryListScreen(),
         ),
+        routes: [
+          GoRoute(
+            path: '/add-inventory-item',
+            pageBuilder: (context, state) => buildPageWithFadeTransition(
+              context: context,
+              state: state,
+              child: const AddEditInventoryItemScreen(),
+            ),
+          ),
+          GoRoute(
+            path: ':itemId', // e.g., /inventory/xyz123
+            pageBuilder: (context, state) {
+              final item = state.extra as InventoryItem;
+              return buildPageWithFadeTransition(
+                context: context,
+                state: state,
+                child: InventoryItemDetailsScreen(item: item),
+              );
+            },
+            routes: [
+              GoRoute(
+                path: 'edit', // e.g., /inventory/xyz123/edit
+                pageBuilder: (context, state) {
+                  final item = state.extra as InventoryItem;
+                  return buildPageWithFadeTransition(
+                    context: context,
+                    state: state,
+                    child: AddEditInventoryItemScreen(item: item),
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
       ),
       GoRoute(
         path: '/financials',

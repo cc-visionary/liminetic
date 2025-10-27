@@ -47,7 +47,7 @@ final class TasksFilterProvider
   }
 }
 
-String _$tasksFilterHash() => r'3f1288447136c82f607839128a7cb52ead40980d';
+String _$tasksFilterHash() => r'21e1dfcff560ad951510bb8bf1acafc5e036bda0';
 
 /// A simple provider to hold the currently selected filter state.
 /// The UI will update this provider when the user taps a filter chip.
@@ -161,7 +161,7 @@ final class FilteredTasksProvider
   }
 }
 
-String _$filteredTasksHash() => r'63c39bb3ef879b2009edafc0ff580037505510a4';
+String _$filteredTasksHash() => r'7af5859018b2ac399e99b89c8843aa19f3051eec';
 
 /// A controller for handling actions related to tasks.
 

@@ -73,7 +73,7 @@ class _LogsScreenState extends ConsumerState<LogsScreen> {
     return ResponsiveScaffold(
       title: 'Logs',
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/add-log'),
+        onPressed: () => context.push('/logs/add-log'),
         child: const Icon(Icons.add),
       ),
       body: Stack(

@@ -191,7 +191,7 @@ final class TasksControllerProvider
   TasksController create() => TasksController();
 }
 
-String _$tasksControllerHash() => r'8bd859ea50cf684f02dd0d5f125809367f90c0da';
+String _$tasksControllerHash() => r'7f94ebedec987d00b68a36463c2c2042885b0524';
 
 /// A controller for handling actions related to tasks.
 

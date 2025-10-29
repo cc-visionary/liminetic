@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:liminetic/src/features/auth/presentation/session_provider.dart';
 import 'package:liminetic/src/features/farm_os/locations/presentation/controllers/locations_controller.dart';
 import 'package:liminetic/src/features/farm_os/settings/team/presentation/controllers/team_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -84,6 +85,7 @@ class TaskDetailsScreen extends ConsumerWidget {
 
     final assigneeNameAsync = ref.watch(assigneeNameProvider(task.assigneeId));
     final locationNameAsync = ref.watch(locationNameProvider(task.locationId));
+    final session = ref.watch(sessionProvider).value;
 
     return Scaffold(
       appBar: AppBar(
@@ -153,6 +155,29 @@ class TaskDetailsScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  if (task.linkedInventory.isNotEmpty) ...[
+                    Text(
+                      'Required Inventory',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Card(
+                      child: Column(
+                        children: task.linkedInventory.map((item) {
+                          return ListTile(
+                            leading: const Icon(Icons.inventory_2_outlined),
+                            title: Text(item['itemName'] as String),
+                            trailing: Text(
+                              'Qty: ${item['quantityUsed']}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -163,17 +188,32 @@ class TaskDetailsScreen extends ConsumerWidget {
               onPressed: tasksState.isLoading
                   ? null
                   : () async {
-                      // TODO: Here is where you will add logic for other modules.
-                      // For now, it just completes the task.
                       try {
+                        final currentUser = session?.appUser;
+                        if (currentUser == null)
+                          throw Exception(
+                            "Cannot complete task: Not logged in.",
+                          );
+
                         await ref
                             .read(tasksControllerProvider.notifier)
-                            .updateTaskStatus(task.id, TaskStatus.completed);
+                            .updateTaskStatus(
+                              task.id,
+                              TaskStatus.completed,
+                              currentUser.uid,
+                              currentUser.username,
+                            );
                         if (context.mounted) context.pop();
                       } catch (e) {
-                        // handle error
+                        if (context.mounted)
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text(e.toString())));
                       }
                     },
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
               child: const Text('Mark as Complete'),
             ),
           ),

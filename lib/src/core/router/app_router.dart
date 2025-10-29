@@ -10,6 +10,10 @@ import 'package:liminetic/src/features/auth/presentation/session_provider.dart';
 import 'package:liminetic/src/core/presentation/screens/splash_screen.dart';
 import 'package:liminetic/src/features/auth/presentation/screens/login_screen.dart';
 import 'package:liminetic/src/features/auth/presentation/screens/signup_screen.dart';
+import 'package:liminetic/src/features/farm_os/financials/domain/financial_transaction_model.dart';
+import 'package:liminetic/src/features/farm_os/financials/presentation/screens/add_transaction_screen.dart';
+import 'package:liminetic/src/features/farm_os/financials/presentation/screens/financials_screen.dart';
+import 'package:liminetic/src/features/farm_os/financials/presentation/screens/transaction_details_screen.dart';
 import 'package:liminetic/src/features/farm_os/inventory/domain/inventory_item_model.dart';
 import 'package:liminetic/src/features/farm_os/inventory/presentation/screens/add_edit_inventory_item_screen.dart';
 import 'package:liminetic/src/features/farm_os/inventory/presentation/screens/inventory_item_details_screen.dart';
@@ -52,15 +56,6 @@ CustomTransitionPage<void> buildPageWithFadeTransition<T>({
     transitionsBuilder: (context, animation, secondaryAnimation, child) =>
         FadeTransition(opacity: animation, child: child),
     transitionDuration: const Duration(milliseconds: 250),
-  );
-}
-
-class FinancialsScreen extends StatelessWidget {
-  const FinancialsScreen({super.key});
-  @override
-  Widget build(BuildContext context) => const ResponsiveScaffold(
-    title: 'Financials',
-    body: Center(child: Text('Financials Screen')),
   );
 }
 
@@ -309,6 +304,34 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           state: state,
           child: const FinancialsScreen(),
         ),
+        routes: [
+          GoRoute(
+            path: '/add-transaction',
+            pageBuilder: (context, state) {
+              // Extract the pre-selected type passed from the button press.
+              // Default to 'expense' if nothing is passed.
+              final initialType =
+                  state.extra as TransactionType? ?? TransactionType.expense;
+              return buildPageWithFadeTransition(
+                context: context,
+                state: state,
+                child: AddTransactionScreen(initialType: initialType),
+              );
+            },
+          ),
+          GoRoute(
+            path: ':transactionId', // e.g., /financials/xyz123
+            pageBuilder: (context, state) {
+              // Get the transaction object passed during navigation.
+              final transaction = state.extra as FinancialTransaction;
+              return buildPageWithFadeTransition(
+                context: context,
+                state: state,
+                child: TransactionDetailsScreen(transaction: transaction),
+              );
+            },
+          ),
+        ],
       ),
       // The route for creating an additional farm.
       GoRoute(

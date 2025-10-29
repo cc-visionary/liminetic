@@ -27,6 +27,11 @@ class Task {
   final TaskStatus status;
   final String createdBy;
   final String? assigneeId; // The UID of the FarmMember assigned to this task.
+
+  // A list to hold linked inventory items and their quantities.
+  // e.g., [{'itemId': 'abc', 'itemName': 'Vaccine A', 'quantityUsed': 2.5}]
+  final List<Map<String, dynamic>> linkedInventory;
+
   final String? locationId; // The ID of the Location this task is linked to.
   final DateTime? dueDate;
 
@@ -37,6 +42,7 @@ class Task {
     required this.status,
     required this.createdBy,
     this.assigneeId,
+    this.linkedInventory = const [],
     this.locationId,
     this.dueDate,
   });
@@ -50,6 +56,9 @@ class Task {
       status: TaskStatus.fromString(data['status'] ?? 'pending'),
       createdBy: data['createdBy'] ?? '',
       assigneeId: data['assigneeId'],
+      linkedInventory: List<Map<String, dynamic>>.from(
+        data['linkedInventory'] ?? [],
+      ),
       locationId: data['locationId'],
       dueDate: (data['dueDate'] as Timestamp?)?.toDate(),
     );
@@ -62,6 +71,7 @@ class Task {
       'status': status.name, // Save the enum name as a string.
       'createdBy': createdBy,
       'assigneeId': assigneeId,
+      'linkedInventory': linkedInventory,
       'locationId': locationId,
       'dueDate': dueDate != null ? Timestamp.fromDate(dueDate!) : null,
     };

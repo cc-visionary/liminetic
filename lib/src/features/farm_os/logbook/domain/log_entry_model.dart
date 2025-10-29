@@ -88,6 +88,8 @@ class LogEntry {
         return '${payload['quantityUsed']} of ${payload['itemName']} used';
       case LogType.healthStatus:
         return 'Health Observation Logged';
+      case LogType.sale:
+        return 'Sale to ${payload['customerName'] ?? 'Customer'}';
       // Add more cases for other log types...
       default:
         return 'General Log Entry';
@@ -113,6 +115,8 @@ class LogEntry {
         return Icons.remove_circle_outline;
       case LogType.movement:
         return Icons.sync_alt;
+      case LogType.sale:
+        return Icons.monetization_on_outlined;
       // Add more cases...
       default:
         return Icons.notes_outlined;

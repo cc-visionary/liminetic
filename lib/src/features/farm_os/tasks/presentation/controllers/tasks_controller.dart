@@ -82,6 +82,7 @@ class TasksController extends _$TasksController {
     String? assigneeId,
     String? locationId,
     DateTime? dueDate,
+    required List<Map<String, dynamic>> linkedInventory,
   }) async {
     final taskRepo = ref.read(taskRepositoryProvider);
     final session = ref.read(sessionProvider).value;
@@ -102,6 +103,7 @@ class TasksController extends _$TasksController {
       assigneeId: assigneeId,
       locationId: locationId,
       dueDate: dueDate,
+      linkedInventory: linkedInventory,
     );
 
     state = const AsyncLoading();
@@ -137,14 +139,27 @@ class TasksController extends _$TasksController {
   }
 
   /// Updates an existing task's status.
-  Future<void> updateTaskStatus(String taskId, TaskStatus newStatus) async {
+  Future<void> updateTaskStatus(
+    String taskId,
+    TaskStatus newStatus,
+    String userId,
+    String userName,
+  ) async {
     final taskRepo = ref.read(taskRepositoryProvider);
     final farmId = ref.read(sessionProvider).value?.activeFarm?.id;
     if (farmId == null) throw Exception('No active farm found.');
+
+    final updateData = {'status': newStatus.name};
+    if (newStatus.name == "completed") {
+      updateData['completedBy'] = userId;
+      updateData['completedByName'] = userName;
+    }
+
     state = const AsyncLoading();
     state = await AsyncValue.guard(
-      () => taskRepo.updateTask(farmId, taskId, {'status': newStatus.name}),
+      () => taskRepo.updateTask(farmId, taskId, updateData),
     );
+    if (state.hasError) throw state.error!;
   }
 
   /// Deletes a task from the database.

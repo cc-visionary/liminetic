@@ -22,6 +22,7 @@ class _InventoryListScreenState extends ConsumerState<InventoryListScreen> {
   @override
   void initState() {
     super.initState();
+    // Add a listener to update the search query in the provider as the user types.
     _searchController.addListener(() {
       ref
           .read(inventoryFilterProvider.notifier)
@@ -39,8 +40,6 @@ class _InventoryListScreenState extends ConsumerState<InventoryListScreen> {
   Widget build(BuildContext context) {
     final inventoryAsync = ref.watch(inventoryProvider);
     final filteredInventory = ref.watch(filteredInventoryProvider);
-
-    // Get current state for the universal filter.
     final currentCategory = ref.watch(inventoryFilterProvider).category;
     final categories = ['All', 'Feeds', 'Medicines', 'Supplies', 'Equipment'];
 
@@ -52,6 +51,7 @@ class _InventoryListScreenState extends ConsumerState<InventoryListScreen> {
       ),
       body: Column(
         children: [
+          // --- Search Bar ---
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: TextFormField(
@@ -62,6 +62,7 @@ class _InventoryListScreenState extends ConsumerState<InventoryListScreen> {
               ),
             ),
           ),
+          // --- Filter Chips ---
           FilterChipRow(
             options: categories,
             selectedValue: currentCategory,
@@ -69,6 +70,7 @@ class _InventoryListScreenState extends ConsumerState<InventoryListScreen> {
               ref.read(inventoryFilterProvider.notifier).setCategory(category);
             },
           ),
+          // --- Inventory List ---
           Expanded(
             child: inventoryAsync.when(
               data: (_) {
@@ -77,7 +79,6 @@ class _InventoryListScreenState extends ConsumerState<InventoryListScreen> {
                     child: Text('No items match your search or filter.'),
                   );
                 }
-                // Using a RefreshIndicator for pull-to-refresh functionality.
                 return RefreshIndicator(
                   onRefresh: () => ref.refresh(inventoryProvider.future),
                   child: ListView.builder(
@@ -108,14 +109,14 @@ class _InventoryListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLowStock =
+    final bool isLowStock =
         item.quantity <= item.lowStockThreshold && item.quantity > 0;
-    final isOutOfStock = item.quantity <= 0;
+    final bool isOutOfStock = item.quantity <= 0;
 
     // Determine the color of the status indicator dot.
     Color? indicatorColor;
-    if (isLowStock) indicatorColor = Colors.orange;
-    if (isOutOfStock) indicatorColor = Colors.red;
+    if (isLowStock) indicatorColor = Colors.orange.shade600;
+    if (isOutOfStock) indicatorColor = Colors.red.shade600;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
@@ -130,7 +131,15 @@ class _InventoryListTile extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
               )
-            : const SizedBox(width: 12), // Placeholder for consistent alignment
+            // Use a transparent container to maintain alignment when there's no indicator.
+            : Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  shape: BoxShape.circle,
+                ),
+              ),
         title: Text(
           item.name,
           style: const TextStyle(fontWeight: FontWeight.bold),

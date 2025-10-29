@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:liminetic/src/features/farm_os/inventory/domain/inventory_item_model.dart';
 import 'package:liminetic/src/features/farm_os/inventory/presentation/controllers/inventory_controller.dart';
+import 'package:liminetic/src/features/farm_os/inventory/presentation/controllers/inventory_details_controller.dart';
+import 'package:liminetic/src/features/farm_os/logbook/presentation/controllers/logbook_controller.dart';
 
 /// A screen that displays the details of a single inventory item and its usage history.
 class InventoryItemDetailsScreen extends ConsumerWidget {
@@ -16,7 +19,7 @@ class InventoryItemDetailsScreen extends ConsumerWidget {
   void _showLogUsageDialog(BuildContext context, InventoryItem currentItem) {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
+      isScrollControlled: true, // Allows the modal to resize with the keyboard
       backgroundColor: Colors.transparent,
       builder: (_) => LogUsageDialog(item: currentItem),
     );
@@ -29,7 +32,7 @@ class InventoryItemDetailsScreen extends ConsumerWidget {
       builder: (context) => AlertDialog(
         title: const Text('Delete Item?'),
         content: Text(
-          'Are you sure you want to permanently delete "${item.name}"?',
+          'Are you sure you want to permanently delete "${item.name}"? This action cannot be undone.',
         ),
         actions: [
           TextButton(
@@ -46,6 +49,7 @@ class InventoryItemDetailsScreen extends ConsumerWidget {
         ],
       ),
     );
+
     if (confirmed == true) {
       try {
         await ref
@@ -63,26 +67,39 @@ class InventoryItemDetailsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch the main provider and filter for this specific item to get live updates.
-    final itemAsync = ref
-        .watch(inventoryProvider)
-        .whenData(
+    // Watch the main provider and filter for this specific item to get live updates
+    // after logging usage.
+    final itemAsync = ref.watch(
+      inventoryProvider.select(
+        (asyncValue) => asyncValue.whenData(
           (items) =>
               items.firstWhere((i) => i.id == item.id, orElse: () => item),
-        );
+        ),
+      ),
+    );
+
+    // 1. Watch the raw logbook stream to get the loading/error state for the whole log list.
+    final usageHistoryAsync = ref.watch(rawLogbookStreamProvider);
+    // 2. Watch the derived (synchronous) provider to get the filtered list of usage logs.
+    final usageHistoryLogs = ref.watch(itemUsageHistoryProvider(item.id));
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Item Detail'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () =>
-                context.push('/inventory/${item.id}/edit', extra: item),
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            onPressed: () => _deleteItem(context, ref),
+          PopupMenuButton(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) {
+              if (value == 'edit') {
+                context.push('/inventory/${item.id}/edit', extra: item);
+              } else if (value == 'delete') {
+                _deleteItem(context, ref);
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'edit', child: Text('Edit')),
+              const PopupMenuItem(value: 'delete', child: Text('Delete')),
+            ],
           ),
         ],
       ),
@@ -90,49 +107,106 @@ class InventoryItemDetailsScreen extends ConsumerWidget {
         data: (currentItem) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // --- Item Details Section ---
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    currentItem.name,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    currentItem.category,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Current Stock:'),
                       Text(
-                        '${currentItem.quantity.toStringAsFixed(1)} ${currentItem.unit}',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        currentItem.name,
+                        style: Theme.of(context).textTheme.headlineMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        currentItem.category,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Current Stock:'),
+                          Text(
+                            '${currentItem.quantity.toStringAsFixed(1)} ${currentItem.unit}',
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Low Stock Threshold:'),
+                          Text(
+                            '${currentItem.lowStockThreshold.toStringAsFixed(1)} ${currentItem.unit}',
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
             const Divider(),
-            // TODO: Display a list of INVENTORY_USAGE logs related to this item.
-            const Expanded(
-              child: Center(child: Text('Usage history will be shown here.')),
+            // --- Usage Log Section (Placeholder) ---
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text(
+                'Usage Log',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
             ),
-            const Spacer(),
+            Expanded(
+              child: usageHistoryAsync.when(
+                data: (_) {
+                  if (usageHistoryLogs.isEmpty) {
+                    return const Center(
+                      child: Text('No usage has been logged for this item.'),
+                    );
+                  }
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: usageHistoryLogs.length,
+                    itemBuilder: (context, index) {
+                      final log = usageHistoryLogs[index];
+                      final payload = log.payload;
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        child: ListTile(
+                          title: Text(
+                            '${payload['quantityUsed']} ${currentItem.unit} used',
+                          ),
+                          subtitle: Text(
+                            'By ${log.actorName} on ${DateFormat.yMMMd().format(log.timestamp.toDate())}',
+                          ),
+                          trailing: Text(payload['notes'] ?? ''),
+                        ),
+                      );
+                    },
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, st) =>
+                    Center(child: Text('Error loading usage history: $e')),
+              ),
+            ),
+
+            // --- Log Usage Button ---
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: ElevatedButton.icon(
                 onPressed: () => _showLogUsageDialog(context, currentItem),
                 icon: const Icon(Icons.remove),
                 label: const Text('Log Usage'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
               ),
             ),
           ],
@@ -157,6 +231,7 @@ class _LogUsageDialogState extends ConsumerState<LogUsageDialog> {
   final _quantityController = TextEditingController();
   final _notesController = TextEditingController();
 
+  /// Validates the form and calls the controller to log the usage.
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     try {
@@ -179,8 +254,8 @@ class _LogUsageDialogState extends ConsumerState<LogUsageDialog> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(inventoryControllerProvider);
+    // This padding ensures the modal moves up with the keyboard.
     return Padding(
-      // This padding ensures the modal moves up with the keyboard.
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
@@ -196,6 +271,7 @@ class _LogUsageDialogState extends ConsumerState<LogUsageDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Draggable handle at the top of the modal.
               Center(
                 child: Container(
                   width: 40,
@@ -230,8 +306,9 @@ class _LogUsageDialogState extends ConsumerState<LogUsageDialog> {
                     return 'Quantity is required.';
                   final quantity = double.tryParse(value);
                   if (quantity == null) return 'Please enter a valid number.';
+                  if (quantity <= 0) return 'Must be greater than 0.';
                   if (quantity > widget.item.quantity)
-                    return 'Usage cannot exceed available stock.';
+                    return 'Usage cannot exceed available stock (${widget.item.quantity}).';
                   return null;
                 },
               ),
@@ -246,6 +323,9 @@ class _LogUsageDialogState extends ConsumerState<LogUsageDialog> {
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: state.isLoading ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
                 child: state.isLoading
                     ? const CircularProgressIndicator()
                     : const Text('Confirm'),

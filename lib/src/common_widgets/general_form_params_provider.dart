@@ -1,5 +1,7 @@
 // lib/src/common_widgets/general_form_params_provider.dart
 
+import 'package:liminetic/src/features/farm_os/inventory/domain/inventory_item_model.dart';
+import 'package:liminetic/src/features/farm_os/inventory/presentation/controllers/inventory_controller.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:liminetic/src/features/farm_os/locations/data/location_repository.dart';
 import 'package:liminetic/src/features/farm_os/locations/domain/location_model.dart';
@@ -16,11 +18,13 @@ class GeneralFormParams {
   final List<FarmMember> teamMembers;
   final List<Location> locations;
   final List<LocationTemplate> templates;
+  final List<InventoryItem> inventoryItems;
 
   GeneralFormParams({
     required this.teamMembers,
     required this.locations,
     required this.templates,
+    required this.inventoryItems,
   });
 }
 
@@ -37,10 +41,12 @@ Future<GeneralFormParams> generalFormParams(Ref ref) async {
   final results = await Future.wait([
     ref.watch(teamProvider.future),
     ref.watch(rawLocationsStreamProvider.future),
+    ref.watch(inventoryProvider.future),
   ]);
 
   final teamMembers = results[0] as List<FarmMember>;
   final allLocations = results[1] as List<Location>;
+  final inventoryItems = results[2] as List<InventoryItem>;
 
   // Get the filtered templates based on the active modules.
   final templates = locationRepo.getLocationTemplates();
@@ -49,5 +55,6 @@ Future<GeneralFormParams> generalFormParams(Ref ref) async {
     teamMembers: teamMembers,
     locations: allLocations,
     templates: templates,
+    inventoryItems: inventoryItems,
   );
 }
